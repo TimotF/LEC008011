@@ -4,9 +4,19 @@
 #include "pin.h"
 #include <Bounce2.h>
 
+/**
+ * LED errors codes : 
+ *  1 flash (250 ms) = No SD card detected
+ *  
+ * 
+ * 
+ */
+
 void (*resetFunc)(void) = 0;
 long mapWithHysteresis(long x, long in_min, long in_max, long out_min, long out_max, byte threshold = 0);
 void updateVolume();
+void handleErrors(uint8_t type, int value);
+void flashLED(int nbFlashs);
 
 DFRobotDFPlayerMini myDFPlayer;
 Bounce *switches = new Bounce[NB_SWITCHES];
@@ -30,13 +40,16 @@ void setup()
 
   if (!myDFPlayer.begin(Serial))
   {
-    for (int i = 0; i < 10; ++i)
-    {
-      digitalWrite(PIN_LED, !digitalRead(PIN_LED));
-      delay(100);
-    }
+    handleErrors(myDFPlayer.readType(), myDFPlayer.read());
+    // for (int i = 0; i < 2; ++i)
+    // {
+    //   digitalWrite(PIN_LED, !digitalRead(PIN_LED));
+    //   delay(250);
+    // }
     resetFunc();
   }
+
+  digitalWrite(PIN_LED, HIGH);
 
   // Player init
   myDFPlayer.setTimeOut(500); //Set serial communictaion time out 500ms
@@ -63,6 +76,11 @@ void loop()
     timer = millis();
     updateVolume();
   }
+
+  if (myDFPlayer.available())
+  {
+    handleErrors(myDFPlayer.readType(), myDFPlayer.read());
+  }
 }
 
 long mapWithHysteresis(long x, long in_min, long in_max, long out_min, long out_max, byte threshold)
@@ -85,8 +103,85 @@ void updateVolume()
   vol = mapWithHysteresis(vol, 0, 1023, 0, 30, 15);
   if (vol != volume)
   {
-    digitalWrite(PIN_LED, vol & 0x01);
+    // digitalWrite(PIN_LED, vol & 0x01);
     volume = vol;
     myDFPlayer.volume(vol);
+  }
+}
+
+void handleErrors(uint8_t type, int value)
+{
+  switch (type)
+  {
+  case TimeOut: // Time Out!
+    flashLED(10);
+    break;
+  case WrongStack: // Stack Wrong!
+    flashLED(11);
+    break;
+  case DFPlayerCardInserted: // Card Inserted!
+    // flashLED(12);
+    break;
+  case DFPlayerCardRemoved: // Card Removed!
+    flashLED(1);
+    resetFunc();
+    // flashLED(13);
+    break;
+  case DFPlayerCardOnline: // Card Online!
+    flashLED(14);
+    break;
+  case DFPlayerUSBInserted: // USB Inserted!
+    flashLED(15);
+    break;
+  case DFPlayerUSBRemoved: // USB Removed!
+    flashLED(16);
+    break;
+  case DFPlayerPlayFinished: // Play Finished!
+    // flashLED(17);
+    break;
+  case DFPlayerError: // DFPlayerError
+    switch (value)
+    {
+    case Busy: // card not found
+      flashLED(1);
+      resetFunc();
+      break;
+    case Sleeping: // Sleeping
+      flashLED(2);
+      break;
+    case SerialWrongStack: // Get Wrong Stack
+      flashLED(3);
+      break;
+    case CheckSumNotMatch: // Check Sum Not Match
+      flashLED(4);
+      break;
+    case FileIndexOut: // File Index Out of Bound
+      flashLED(5);
+      break;
+    case FileMismatch: // Cannot Find File
+      flashLED(6);
+      break;
+    case Advertise: // In Advertise
+      flashLED(7);
+      break;
+    default:
+      break;
+    }
+    break;
+  default:
+    break;
+  }
+}
+
+void flashLED(int nbFlashs)
+{
+  digitalWrite(PIN_LED, LOW);
+  delay(1000);
+  for (int i = 0; i < nbFlashs; ++i)
+  {
+    digitalWrite(PIN_LED, HIGH);
+    delay(250);
+    digitalWrite(PIN_LED, LOW);
+    delay(250);
   }
 }
