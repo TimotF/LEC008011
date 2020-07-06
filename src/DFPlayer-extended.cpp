@@ -7,8 +7,17 @@
 /**
  * LED errors codes : 
  *  1 flash (250 ms) = No SD card detected
- *  
- * 
+ *  2 flashes (250 ms) = Cannot Find File
+ *  3 flashes (250 ms) = File Index Out of Bound
+ *  4 flashes (250 ms) = Check Sum Not Match
+ *  5 flashes (250 ms) = Get Wrong Stack
+ *  6 flashes (250 ms) = Sleeping
+ *  7 flashes (250 ms) = In Advertise
+ *  10 flashes (250 ms) = Time Out!
+ *  11 flashes (250 ms) = Stack Wrong!
+ *  14 flashes (250 ms) = Card Online!
+ *  15 flashes (250 ms) = USB Inserted!
+ *  16 flashes (250 ms) = USB Removed!
  * 
  */
 
@@ -41,11 +50,6 @@ void setup()
   if (!myDFPlayer.begin(Serial))
   {
     handleErrors(myDFPlayer.readType(), myDFPlayer.read());
-    // for (int i = 0; i < 2; ++i)
-    // {
-    //   digitalWrite(PIN_LED, !digitalRead(PIN_LED));
-    //   delay(250);
-    // }
     resetFunc();
   }
 
@@ -137,6 +141,7 @@ void handleErrors(uint8_t type, int value)
     flashLED(16);
     break;
   case DFPlayerPlayFinished: // Play Finished!
+    digitalWrite(PIN_LED, HIGH);
     // flashLED(17);
     break;
   case DFPlayerError: // DFPlayerError
@@ -147,19 +152,19 @@ void handleErrors(uint8_t type, int value)
       resetFunc();
       break;
     case Sleeping: // Sleeping
-      flashLED(2);
+      flashLED(6);
       break;
     case SerialWrongStack: // Get Wrong Stack
-      flashLED(3);
+      flashLED(5);
       break;
     case CheckSumNotMatch: // Check Sum Not Match
       flashLED(4);
       break;
     case FileIndexOut: // File Index Out of Bound
-      flashLED(5);
+      flashLED(3);
       break;
     case FileMismatch: // Cannot Find File
-      flashLED(6);
+      flashLED(2);
       break;
     case Advertise: // In Advertise
       flashLED(7);
