@@ -132,7 +132,7 @@ void handleErrors(uint8_t type, int value)
     // flashLED(13);
     break;
   case DFPlayerCardOnline: // Card Online!
-    flashLED(14);
+    // flashLED(14);
     break;
   case DFPlayerUSBInserted: // USB Inserted!
     flashLED(15);
